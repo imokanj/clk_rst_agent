@@ -21,7 +21,7 @@ class ClkDriver extends uvm_driver #(ClkItem);
 
   extern virtual task          driveInit();
   extern virtual task          startClk (input ClkItem it);
-  extern virtual function void setClk   (input ClkItem it);
+  extern virtual function void setClkPol(input ClkItem it);
   extern virtual function void stopClk  (input ClkItem it);
   extern virtual task          run_phase(uvm_phase phase);
 
@@ -37,7 +37,7 @@ endclass: ClkDriver
 
   //----------------------------------------------------------------------------
 
-  function void ClkDriver::setClk(input ClkItem it);
+  function void ClkDriver::setClkPol(input ClkItem it);
     foreach (it.clk_name[i]) begin
       // check if an affected process is already running
       if (proc_start_clk[it.clk_name[i]] != null) begin
@@ -46,7 +46,7 @@ endclass: ClkDriver
         vif.clk[it.clk_name[i]] = it.init[i];
       end
     end
-  endfunction: setClk
+  endfunction: setClkPol
 
   //----------------------------------------------------------------------------
 
@@ -108,9 +108,9 @@ endclass: ClkDriver
       seq_item_port.get_next_item(it);
 
       case(it.op_type)
-        CLK_SET      : setClk  (it);
-        CLK_START    : startClk(it);
-        CLK_STOP     : stopClk (it);
+        CLK_SET      : setClkPol(it);
+        CLK_START    : startClk (it);
+        CLK_STOP     : stopClk  (it);
         default      : `uvm_error("CLK_DRV", "No such operation")
       endcase
 
