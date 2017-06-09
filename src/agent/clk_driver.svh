@@ -38,7 +38,14 @@ endclass: ClkDriver
   //----------------------------------------------------------------------------
 
   function void ClkDriver::setClk(input ClkItem it);
-    // implement
+    foreach (it.clk_name[i]) begin
+      // check if an affected process is already running
+      if (proc_start_clk[it.clk_name[i]] != null) begin
+        `uvm_warning("CLK_DRV", $sformatf("\nChanging %s clock polarity ignored. Clock is running.", it.clk_name[i].name()))        
+      end else begin
+        vif.clk[it.clk_name[i]] = it.init[i];
+      end
+    end
   endfunction: setClk
 
   //----------------------------------------------------------------------------
@@ -82,10 +89,11 @@ endclass: ClkDriver
   function void ClkDriver::stopClk(input ClkItem it);
     foreach (it.clk_name[i]) begin
       // check if an affected process is already running
-      if (proc_start_clk[i] != null) begin
-        proc_start_clk[i].kill();
+      if (proc_start_clk[it.clk_name[i]] != null) begin
+        proc_start_clk[it.clk_name[i]].kill();
+        proc_start_clk[it.clk_name[i]] = null;
       end
-    end    
+    end
   endfunction: stopClk
 
   //----------------------------------------------------------------------------
@@ -103,7 +111,7 @@ endclass: ClkDriver
         CLK_SET      : setClk  (it);
         CLK_START    : startClk(it);
         CLK_STOP     : stopClk (it);
-        default      : `uvm_error("Clk_DRV", "No such operation")
+        default      : `uvm_error("CLK_DRV", "No such operation")
       endcase
 
       seq_item_port.item_done();

@@ -66,6 +66,7 @@ package ClkAgentPkg;
   `include "sequences/clk_base_sequence.svh"
   `include "sequences/clk_start_sequence.svh"
   `include "sequences/clk_stop_sequence.svh"
+  `include "sequences/clk_set_polarity_sequence.svh"
 
   // components
   `include "agent/clk_agent_cfg.svh"
@@ -160,8 +161,14 @@ package ClkAgentPkg;
       return;
     end
 
-    if (_clk_name.size() > WIDTH) begin
-      `uvm_error("CLK_PKG", "\nNumber of specified clocks is greater than number of actual clocks\n")
+    if (_clk_name.size() > WIDTH || _clk_name.size() < 1) begin
+      `uvm_error("CLK_PKG", {"\nOperation ignored.\nNumber of specified clocks ",
+                             "is greater than number of actual clocks, or is less than one\n"})
+      return;
+    end
+    
+    if (_period.size() != _clk_name.size()) begin
+      `uvm_error("CLK_PKG", "\nNumber of specified clock periods differs from the number of clock sources.\n")
       return;
     end
     
@@ -236,8 +243,9 @@ package ClkAgentPkg;
       return;
     end
 
-    if (_clk_name.size() > WIDTH) begin
-      `uvm_error("CLK_PKG", "\nNumber of specified clocks is greater than number of actual clocks\n")
+    if (_clk_name.size() > WIDTH || _clk_name.size() < 1) begin
+      `uvm_error("CLK_PKG", {"\nOperation ignored.\nNumber of specified clocks ",
+                             "is greater than number of actual clocks, or is less than one\n"})
       return;
     end
     
@@ -264,6 +272,60 @@ package ClkAgentPkg;
   endtask : stopClk
 
   //----------------------------------------------------------------------------
+
+  task automatic setClkPol(
+    input  bit                _print_info     = 1'b1,
+    input  uvm_sequencer_base _sqcr                 ,
+    input  clk_list_t         _clk_name    []       ,
+    input  logic              _init        [] = {}
+  );
+
+    ClkSetPolaritySequence  _seq;
+    
+    if (_sqcr == null) begin
+      `uvm_error("CLK_PKG", "\nClk agent sequencer handle is NULL\n")
+      return;
+    end
+
+    if (_clk_name.size() > WIDTH || _clk_name.size() < 1) begin
+      `uvm_error("CLK_PKG", {"\nOperation ignored.\nNumber of specified clocks ",
+                             "is greater than number of actual clocks, or is less than one\n"})
+      return;
+    end
+        
+    _seq = ClkSetPolaritySequence::type_id::create("clk_set_pol_seq");
+    
+    // set default values for initial and phase delay parameters
+    if (!_init.size()) begin
+      _init = new [_clk_name.size()];
+      foreach (_init[i]) begin
+        _init[i] = 1'b0;
+      end
+    end
+
+    if (!(_seq.randomize() with {
+      clk_name.size()    == _clk_name.size();
+      foreach(_clk_name[i])
+        clk_name[i]      == _clk_name[i];
+      init.size()        == _init.size();
+      foreach(_init[i])
+        init[i]          == _init[i];
+    })) `uvm_error("CLK_PKG", "\nRandomization failed\n")
+
+    if (_print_info) begin
+      `uvm_info("CLK_PKG", $sformatf({"\nClk Set Polatiy OP:\n",
+                               "-------------------------------------------------\n",
+                               "OP Type           : CLK_START\n",
+                               "Pin Name(s)       : %s\n",
+                               "Pin Num(s)        : %s\n",
+                               "Polarity value(s) : %s\n"}
+                               , printPinEnumO(_clk_name, 0), printPinEnumO(_clk_name, 1), printPinVal(_init)
+      ), UVM_LOW)
+    end
+
+    _seq.start(_sqcr);
+
+  endtask : setClkPol
 
 endpackage : ClkAgentPkg
 
