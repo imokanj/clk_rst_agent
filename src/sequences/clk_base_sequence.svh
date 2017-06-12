@@ -2,7 +2,7 @@
  * START DATE  : 2017
  * LICENSE     : LGPLv3
  *
- * DESCRIPTION : Clk agent base sequence. All other sequences are extended from
+ * DESCRIPTION : Agent base sequence. All other sequences are extended from
  *               this one.
  */
 
@@ -14,6 +14,7 @@ class ClkBaseSequence extends uvm_sequence #(ClkItem);
   static int      inst_cnt;
   rand op_type_t  op_type;
                   
+  rand rst_list_t rst_name    [];
   rand clk_list_t clk_name    [];
   rand logic      init        [];
   rand time       period      [];

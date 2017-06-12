@@ -15,6 +15,7 @@ interface ClkIf();
 // Ports
 //******************************************************************************
 
+  logic [31:0] rst;
   logic [31:0] clk;
 
 endinterface : ClkIf
