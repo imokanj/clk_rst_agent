@@ -1,4 +1,4 @@
-<h1><span style="font-size: 18pt;">UVM Clock Agent</span></h1>
+<h1><span style="font-size: 18pt;">UVM Clock and Reset Agent</span></h1>
 <p><span style="font-size: 12pt;">This repository contains an implementation of a Clock agent, which is used for testbench clock generation, written in UVM 1.1d and SystemVerilog-2012.</span><br />
 <span style="font-size: 12pt;">Also, a complete user guide with the agent description, instructions and usage, is provided (TBD).</span><br /><br /><span style="font-size: 12pt;">The main features of the Clock agent are:</span></p>
 <ul>
