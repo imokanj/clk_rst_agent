@@ -2,15 +2,15 @@
  * START DATE  : 2017
  * LICENSE     : LGPLv3
  *
- * DESCRIPTION : Clk agent package. Contains :
+ * DESCRIPTION : Agent package. Contains :
  *                 - User specified clocks
  *                 - User specified initial clock signal values
- *                 - All needed files for building the Clk agent (except the Clk interface)
- *                 - Convenience functions/tasks for clock generation/stopping
+ *                 - All needed files for building the clock and reset agent (except the interface)
+ *                 - Convenience functions/tasks for clock and reset generation/stopping
  */
 
-`ifndef _AGENT_CLK_PKG_
-`define _AGENT_CLK_PKG_
+`ifndef _AGENT_CLK_RST_PKG_
+`define _AGENT_CLK_RST_PKG_
 
 package ClkAgentPkg;
 
@@ -23,18 +23,33 @@ package ClkAgentPkg;
 
   // agent output pins list
   typedef enum {
+    SYS_RST,
+    SYS_RST_N    
+  } rst_list_t;
+  rst_list_t rst_list;
+  
+  typedef enum {
+    SYS_CLK,
     CLK_25_MHz,
-    CLK_50_MHz    
+    CLK_50_MHz
   } clk_list_t;
   clk_list_t clk_list;
 
   // if your simulator does not support built-in functions in constant expressions
-  // please manually count the number of clocks and write it here, and delete the 
-  // *.num() calls
-  parameter WIDTH = 2; // clk_list.num();
+  // please manually count the number of resets and clocks and write it here, and
+  // delete the *.num() calls,
+  parameter R_WIDTH = 2; // rst_list.num();
+  parameter C_WIDTH = 3; // clk_list.num();
+
+  // set the initial values of the Rst output pins
+  logic [R_WIDTH-1:0] rst_init = {
+    1'b1, // SYS_RST
+    1'b0  // SYS_RST_N
+  };
 
   // set the initial values of the Clk output pins
-  logic [WIDTH-1:0] clk_init = {
+  logic [C_WIDTH-1:0] clk_init = {
+    1'b1, // SYS_CLK
     1'b0, // CLK_25_MHz
     1'b0  // CLK_50_MHz
   };
@@ -44,6 +59,8 @@ package ClkAgentPkg;
 //==============================================================================
 
   typedef enum {
+    RST_SET,
+    CLK_WAIT,
     CLK_SET,
     CLK_START,
     CLK_STOP
@@ -67,6 +84,8 @@ package ClkAgentPkg;
   `include "sequences/clk_start_sequence.svh"
   `include "sequences/clk_stop_sequence.svh"
   `include "sequences/clk_set_polarity_sequence.svh"
+  `include "sequences/rst_set_polarity_sequence.svh"
+  `include "sequences/clk_wait_cycles_sequence.svh"
 
   // components
   `include "agent/clk_agent_cfg.svh"
@@ -150,33 +169,33 @@ package ClkAgentPkg;
     input  uvm_sequencer_base _sqcr                 ,
     input  clk_list_t         _clk_name    []       ,
     input  logic              _init        [] = {}  ,      
-    input  logic [31:0]       _period      []       ,
-    input  logic [31:0]       _phase_shift [] = {}
+    input  time               _period      []       ,
+    input  time               _phase_shift [] = {}
   );
 
     ClkStartSequence  _seq;
     
     if (_sqcr == null) begin
-      `uvm_error("CLK_PKG", "\nClk agent sequencer handle is NULL\n")
+      `uvm_error("CLK_RST_PKG", "\nClk agent sequencer handle is NULL\n")
       return;
     end
 
-    if (_clk_name.size() > WIDTH || _clk_name.size() < 1) begin
-      `uvm_error("CLK_PKG", {"\nOperation ignored.\nNumber of specified clocks ",
+    if (_clk_name.size() > C_WIDTH || _clk_name.size() < 1) begin
+      `uvm_error("CLK_RST_PKG", {"\nOperation ignored.\nNumber of specified clocks ",
                              "is greater than number of actual clocks, or is less than one\n"})
       return;
     end
     
     if (_period.size() != _clk_name.size()) begin
-      `uvm_error("CLK_PKG", "\nNumber of specified clock periods differs from the number of clock sources.\n")
+      `uvm_error("CLK_RST_PKG", "\nNumber of specified clock periods differs from the number of clock sources.\n")
       return;
     end
     
-    foreach (_period[i]) begin
-      if (_period[i][0]) begin
-        `uvm_warning("CLK_PKG", $sformatf("\nPeriod for %s clock is not an even number\n", _clk_name[i].name()))
-      end
-    end
+    //foreach (_period[i]) begin
+      //if (_period[i][0]) begin
+        //`uvm_warning("CLK_RST_PKG", $sformatf("\nPeriod for %s clock is not an even number\n", _clk_name[i].name()))
+      //end
+    //end
     
     _seq = ClkStartSequence::type_id::create("clk_start_seq");
     
@@ -208,19 +227,19 @@ package ClkAgentPkg;
       phase_shift.size() == _phase_shift.size();
       foreach(_phase_shift[i])
         phase_shift[i]   == _phase_shift[i];
-    })) `uvm_error("CLK_PKG", "\nRandomization failed\n")
+    })) `uvm_error("CLK_RST_PKG", "\nRandomization failed\n")
 
     if (_print_info) begin
-      `uvm_info("CLK_PKG", $sformatf({"\nClk Start OP:\n",
+      `uvm_info("CLK_RST_PKG", $sformatf({"\nStart Clock OP:\n",
                                "-------------------------------------------------\n",
                                "OP Type         : CLK_START\n",
-                               "Pin Name(s)     : %s\n",
-                               "Pin Num(s)      : %s\n",
+                               "Clock Name(s)   : %s\n",
+                               "Clock Num(s)    : %s\n",
                                "Init. Value(s)  : %s\n",
-                               "Clock Period(s) : %s\n",
-                               "Phase Delay(s)  : %s\n"}
+                               "Clock Period(s) : %p\n",
+                               "Phase Delay(s)  : %p\n"}
                                , printPinEnumO(_clk_name, 0), printPinEnumO(_clk_name, 1)
-                               , printPinVal(_init), printPinVal2(_period), printPinVal2(_phase_shift)
+                               , printPinVal(_init), _period, _phase_shift
       ), UVM_LOW)
     end
 
@@ -231,20 +250,20 @@ package ClkAgentPkg;
   //----------------------------------------------------------------------------
 
   task automatic stopClk(
-    input  bit                _print_info     = 1'b1,
-    input  uvm_sequencer_base _sqcr                 ,
-    input  clk_list_t         _clk_name    []
+    input  bit                _print_info    = 1'b1,
+    input  uvm_sequencer_base _sqcr                ,
+    input  clk_list_t         _clk_name   []
   );
 
     ClkStopSequence  _seq;
     
     if (_sqcr == null) begin
-      `uvm_error("CLK_PKG", "\nClk agent sequencer handle is NULL\n")
+      `uvm_error("CLK_RST_PKG", "\nClk agent sequencer handle is NULL\n")
       return;
     end
 
-    if (_clk_name.size() > WIDTH || _clk_name.size() < 1) begin
-      `uvm_error("CLK_PKG", {"\nOperation ignored.\nNumber of specified clocks ",
+    if (_clk_name.size() > C_WIDTH || _clk_name.size() < 1) begin
+      `uvm_error("CLK_RST_PKG", {"\nOperation ignored.\nNumber of specified clocks ",
                              "is greater than number of actual clocks, or is less than one\n"})
       return;
     end
@@ -255,14 +274,14 @@ package ClkAgentPkg;
       clk_name.size()    == _clk_name.size();
       foreach(_clk_name[i])
         clk_name[i]      == _clk_name[i];
-    })) `uvm_error("CLK_PKG", "\nRandomization failed\n");
+    })) `uvm_error("CLK_RST_PKG", "\nRandomization failed\n");
 
     if (_print_info) begin
-      `uvm_info("CLK_PKG", $sformatf({"\nClk Stop OP:\n",
+      `uvm_info("CLK_RST_PKG", $sformatf({"\nStop Clock OP:\n",
                                "-------------------------------------------------\n",
                                "OP Type         : CLK_STOP\n",
-                               "Pin Name(s)     : %s\n",
-                               "Pin Num(s)      : %s\n"}
+                               "Clock Name(s)   : %s\n",
+                               "Clock Num(s)    : %s\n"}
                                , printPinEnumO(_clk_name, 0), printPinEnumO(_clk_name, 1)
       ), UVM_LOW);
     end
@@ -274,32 +293,33 @@ package ClkAgentPkg;
   //----------------------------------------------------------------------------
 
   task automatic setClkPol(
-    input  bit                _print_info     = 1'b1,
-    input  uvm_sequencer_base _sqcr                 ,
-    input  clk_list_t         _clk_name    []       ,
-    input  logic              _init        [] = {}
+    input  bit                _print_info    = 1'b1,
+    input  uvm_sequencer_base _sqcr                ,
+    input  clk_list_t         _clk_name   []       ,
+    input  logic              _pol        [] = {}
   );
 
     ClkSetPolaritySequence  _seq;
     
     if (_sqcr == null) begin
-      `uvm_error("CLK_PKG", "\nClk agent sequencer handle is NULL\n")
+      `uvm_error("CLK_RST_PKG", "\nClk agent sequencer handle is NULL\n")
       return;
     end
 
-    if (_clk_name.size() > WIDTH || _clk_name.size() < 1) begin
-      `uvm_error("CLK_PKG", {"\nOperation ignored.\nNumber of specified clocks ",
-                             "is greater than number of actual clocks, or is less than one\n"})
+    if (_clk_name.size() > C_WIDTH || _clk_name.size() < 1) begin
+      `uvm_error("CLK_RST_PKG", {"\nOperation ignored.\nNumber of specified clocks ",
+                                 "is greater than number of actual clocks, or is less than one\n"})
       return;
     end
         
     _seq = ClkSetPolaritySequence::type_id::create("clk_set_pol_seq");
     
     // set default values for initial and phase delay parameters
-    if (!_init.size()) begin
-      _init = new [_clk_name.size()];
-      foreach (_init[i]) begin
-        _init[i] = 1'b0;
+    if (!_pol.size()) begin
+      `uvm_warning("CLK_RST_PKG", "\nPolarity not specified. Default value of all zeros used.\n")
+      _pol = new [_clk_name.size()];
+      foreach (_pol[i]) begin
+        _pol[i] = 1'b0;
       end
     end
 
@@ -307,25 +327,160 @@ package ClkAgentPkg;
       clk_name.size()    == _clk_name.size();
       foreach(_clk_name[i])
         clk_name[i]      == _clk_name[i];
-      init.size()        == _init.size();
-      foreach(_init[i])
-        init[i]          == _init[i];
-    })) `uvm_error("CLK_PKG", "\nRandomization failed\n")
+      init.size()        == _pol.size();
+      foreach(_pol[i])
+        init[i]          == _pol[i];
+    })) `uvm_error("CLK_RST_PKG", "\nRandomization failed\n")
 
     if (_print_info) begin
-      `uvm_info("CLK_PKG", $sformatf({"\nClk Set Polatiy OP:\n",
+      `uvm_info("CLK_RST_PKG", $sformatf({"\nSet Clock Polatiy OP:\n",
                                "-------------------------------------------------\n",
-                               "OP Type           : CLK_START\n",
-                               "Pin Name(s)       : %s\n",
-                               "Pin Num(s)        : %s\n",
+                               "OP Type           : CLK_SET\n",
+                               "Clock Name(s)     : %s\n",
+                               "Clock Num(s)      : %s\n",
                                "Polarity value(s) : %s\n"}
-                               , printPinEnumO(_clk_name, 0), printPinEnumO(_clk_name, 1), printPinVal(_init)
+                               , printPinEnumO(_clk_name, 0), printPinEnumO(_clk_name, 1), printPinVal(_pol)
       ), UVM_LOW)
     end
 
     _seq.start(_sqcr);
 
   endtask : setClkPol
+  
+  //----------------------------------------------------------------------------
+
+  task automatic setRstPol(
+    input  bit                _print_info    = 1'b1,
+    input  uvm_sequencer_base _sqcr                ,
+    input  rst_list_t         _rst_name   []       ,
+    input  clk_list_t         _clk_name   []       ,
+    input  logic              _pol        [] = {}
+    input  logic              _is_blocking   = 1'b1
+  );
+
+    string                  _is_blocking_str;
+    RstSetPolaritySequence  _seq;
+    
+    if (_sqcr == null) begin
+      `uvm_error("CLK_RST_PKG", "\nClk agent sequencer handle is NULL\n")
+      return;
+    end
+
+    if (_rst_name.size() > R_WIDTH || _rst_name.size() < 1) begin
+      `uvm_error("CLK_RST_PKG", {"\nOperation ignored.\nNumber of specified resets ",
+                                 "is greater than number of actual resets, or is less than one\n"})
+      return;
+    end
+        
+    if (_clk_name.size() > C_WIDTH || _rst_name.size() < 1 || (_clk_name.size() < C_WIDTH && _clk_name.size() != 1)) begin
+      `uvm_error("CLK_RST_PKG", {"\nOperation ignored.\nValid number of specified clocks ",
+                                 "is either one or an individual clock for all reset signals.\n",
+                                 "When one clock is specified it will be used for all specified reset signals.\n"})
+      return;
+    end
+        
+    _seq = RstSetPolaritySequence::type_id::create("rst_set_pol_seq");
+    
+    // regulate clk array
+    if (_clk_name.size() == 1) begin
+      clk_list_t tmp;
+      tmp = _clk_name[0];
+      
+      _clk_name = new [_rst_name.size()];
+      foreach (_clk_name[i]) begin
+        _clk_name[i] = tmp;
+      end
+    end
+    
+    // set default values for initial and phase delay parameters
+    if (!_pol.size()) begin
+      `uvm_warning("CLK_RST_PKG", "\nPolarity not specified. Default value of all zeros used.\n")
+      _pol = new [_rst_name.size()];
+      foreach (_pol[i]) begin
+        _pol[i] = 1'b0;
+      end
+    end
+
+    if (!(_seq.randomize() with {
+      rst_name.size()    == _rst_name.size();
+      foreach(_rst_name[i])
+        rst_name[i]      == _rst_name[i];
+      clk_name.size()    == _clk_name.size();
+      foreach(_clk_name[i])
+        clk_name[i]      == _clk_name[i];
+      init.size()        == _pol.size();
+      foreach(_pol[i])
+        init[i]          == _pol[i];
+      is_blocking     == _is_blocking;
+    })) `uvm_error("CLK_RST_PKG", "\nRandomization failed\n")
+
+    if (_print_info) begin
+      _is_blocking_str = (_is_blocking != 1'b0) ? "TRUE" : "FALSE";
+      
+      `uvm_info("CLK_RST_PKG", $sformatf({"\nSet Reset Polatiy OP:\n",
+                               "-------------------------------------------------\n",
+                               "OP Type           : RST_SET\n",
+                               "Reset Name(s)     : %p\n",
+                               "Reset Num(s)      : %p\n",
+                               "Polarity value(s) : %s\n",
+                               "Clock Name(s)     : %s\n",
+                               "Clock Num(s)      : %s\n",
+                               "Blocking          : %s\n"}
+                               , _rst_name, _rst_name, printPinVal(_pol)
+                               , printPinEnumO(_clk_name, 0), printPinEnumO(_clk_name, 1)
+                               , _is_blocking_str
+      ), UVM_LOW)
+    end
+
+    _seq.start(_sqcr);
+
+  endtask : setRstPol
+  
+  //----------------------------------------------------------------------------
+
+  task automatic waitClkCycles(
+    input  bit                _print_info = 1'b1,
+    input  uvm_sequencer_base _sqcr             ,
+    input  clk_list_t         _clk_name         ,
+    input  logic [31:0]       _num        = 1
+  );
+
+    ClkWaitCyclesSequence  _seq;
+    
+    if (_sqcr == null) begin
+      `uvm_error("CLK_RST_PKG", "\nClk agent sequencer handle is NULL\n")
+      return;
+    end
+        
+    _seq = ClkWaitCyclesSequence::type_id::create("clk_wait_cycles_seq");
+    
+    if (_num < 1) begin
+      `uvm_warning("CLK_RST_PKG", "\nIncorrect number of cycles value specified. Value of 1 used.\n")
+      _num = 1;
+    end
+
+    if (!(_seq.randomize() with {
+      clk_name.size() == 1;
+      clk_name[0]     == _clk_name;
+      init.size()     == 1;
+      init[0]         == _num;
+    })) `uvm_error("CLK_RST_PKG", "\nRandomization failed\n")
+
+    if (_print_info) begin
+      `uvm_info("CLK_RST_PKG", $sformatf({"\nWait Clock Cycles OP:\n",
+                               "-------------------------------------------------\n",
+                               "OP Type       : CLK_WAIT\n",
+                               "Clock Name    : %s\n",
+                               "Clock Num     : %0d\n",
+                               "Num. Cycle(s) : %0d\n"}
+                               , _clk_name.name(), _clk_name, _num
+      ), UVM_LOW)
+    end
+
+    _seq.start(_sqcr);
+
+  endtask : waitClkCycles
+
 
 endpackage : ClkAgentPkg
 

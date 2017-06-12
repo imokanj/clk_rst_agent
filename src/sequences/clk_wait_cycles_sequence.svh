@@ -2,15 +2,15 @@
  * START DATE  : 2017
  * LICENSE     : LGPLv3
  *
- * DESCRIPTION : Agent set polarity sequence. Used to set one or more IDLING
- *               user defined clocks to a specified value.
+ * DESCRIPTION : Agent wait cycles sequence. Used to wait for one or more clock
+ *               cycles, on a specified user clock.
  */
 
-class ClkSetPolaritySequence extends ClkStartSequence;
-  `uvm_object_utils(ClkSetPolaritySequence)
+class ClkWaitCyclesSequence extends RstSetPolaritySequence;
+  `uvm_object_utils(ClkWaitCyclesSequence)
 
   // Constructor
-  function new(string name = "ClkSetPolaritySequence");
+  function new(string name = "ClkWaitCyclesSequence");
     super.new(name);
   endfunction: new
 
@@ -19,15 +19,15 @@ class ClkSetPolaritySequence extends ClkStartSequence;
   
   // Constraints
   constraint op_type_c {
-    op_type == CLK_SET;
+    op_type == CLK_WAIT;
   }
 
-endclass: ClkSetPolaritySequence
+endclass: ClkWaitCyclesSequence
 
 //******************************************************************************
 // Function/Task implementations
 //******************************************************************************
 
-  task ClkSetPolaritySequence::body();
+  task ClkWaitCyclesSequence::body();
     super.body(); // call clk start sequence
   endtask: body

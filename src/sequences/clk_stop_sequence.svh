@@ -2,7 +2,7 @@
  * START DATE  : 2017
  * LICENSE     : LGPLv3
  *
- * DESCRIPTION : Clk agent stop sequence. Used to stop generation of one or more
+ * DESCRIPTION : Agent stop sequence. Used to stop generation of one or more
  *               running user defined clocks.
  */
 
@@ -37,6 +37,6 @@ endclass: ClkStopSequence
       clk_name.size()    == local::clk_name.size();
       foreach(local::clk_name[i])
         clk_name[i]      == local::clk_name[i];
-    }) `uvm_error("Clk_SET_SQNC", "\nRandomization failed\n");
+    }) `uvm_error("CLK_STOP_SQNC", "\nRandomization failed\n");
     finish_item(it);
   endtask: body

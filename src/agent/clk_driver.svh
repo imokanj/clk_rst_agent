@@ -2,7 +2,7 @@
  * START DATE  : 2017
  * LICENSE     : LGPLv3
  *
- * DESCRIPTION : Clk agent driver. Used for generating user defined clocks.
+ * DESCRIPTION : Agent driver. Used for generating user defined clocks.
  */
 
 class ClkDriver extends uvm_driver #(ClkItem);
@@ -19,10 +19,13 @@ class ClkDriver extends uvm_driver #(ClkItem);
     super.new(name, parent);
   endfunction
 
-  extern virtual task          driveInit();
-  extern virtual task          startClk (input ClkItem it);
   extern virtual function void setClkPol(input ClkItem it);
   extern virtual function void stopClk  (input ClkItem it);
+  
+  extern virtual task          driveInit();
+  extern virtual task          setRstPol(input ClkItem it);
+  extern virtual task          waitClk  (input ClkItem it);
+  extern virtual task          startClk (input ClkItem it);
   extern virtual task          run_phase(uvm_phase phase);
 
 endclass: ClkDriver
@@ -33,7 +36,61 @@ endclass: ClkDriver
 
   task ClkDriver::driveInit();
     vif.clk = clk_init;
+    vif.rst = rst_init;
   endtask: driveInit
+
+  //----------------------------------------------------------------------------
+
+  task ClkDriver::setRstPol(input ClkItem it);
+    logic [31:0] clk_name;
+    
+    foreach (it.rst_name[i]) begin
+      fork
+        begin
+          // check if the specified clock process is running
+          if (proc_start_clk[it.clk_name[i]] == null) begin
+            `uvm_warning("CLK_RST_DRV", $sformatf({"\nChanging %s reset polarity ignored. ",
+                         "Clock %s is not running."}, it.rst_name[i].name(), it.clk_name[i].name()))        
+          end else begin
+            logic        rst_val;
+            logic [31:0] rst_name;
+            
+            rst_val  = it.init[i];
+            rst_name = it.rst_name[i];
+            clk_name = it.clk_name[i];
+          
+            @(posedge vif.clk[clk_name]);
+            #0;
+            vif.rst[rst_name] = rst_val;
+          end
+        end
+      join_none
+
+      // must use context switch because of fork-join_none
+      #0;
+    end
+    
+    // block
+    if (it.is_blocking) begin
+      foreach (it.clk_name[i]) begin
+        fork
+          begin
+            if (proc_start_clk[it.clk_name[i]] != null) begin
+              @(posedge vif.clk[it.clk_name[i]]);
+            end
+          end        
+        join
+      end
+    end
+  endtask: setRstPol
+  
+  //----------------------------------------------------------------------------
+
+  task ClkDriver::waitClk(input ClkItem it);
+    repeat(it.init[0]) begin
+      @(posedge vif.clk[it.clk_name[0]]);
+    end
+  endtask: waitClk
 
   //----------------------------------------------------------------------------
 
@@ -41,7 +98,7 @@ endclass: ClkDriver
     foreach (it.clk_name[i]) begin
       // check if an affected process is already running
       if (proc_start_clk[it.clk_name[i]] != null) begin
-        `uvm_warning("CLK_DRV", $sformatf("\nChanging %s clock polarity ignored. Clock is running.", it.clk_name[i].name()))        
+        `uvm_warning("CLK_RST_DRV", $sformatf("\nChanging %s clock polarity ignored. Clock is running.", it.clk_name[i].name()))        
       end else begin
         vif.clk[it.clk_name[i]] = it.init[i];
       end
@@ -70,7 +127,10 @@ endclass: ClkDriver
           half_period  = it.period[i]/2;
           
           // start clock generation
-          #phase_shift;
+          if (phase_shift) begin
+            #phase_shift;
+          end
+          
           vif.clk[clk_name]        = init_clk_val;
           proc_start_clk[clk_name] = process::self();
           forever begin
@@ -102,16 +162,18 @@ endclass: ClkDriver
     ClkItem it;
 
 
-    proc_start_clk = new [WIDTH];
+    proc_start_clk = new [C_WIDTH];
     driveInit();
     forever begin
       seq_item_port.get_next_item(it);
 
       case(it.op_type)
+        RST_SET      : setRstPol(it);
         CLK_SET      : setClkPol(it);
+        CLK_WAIT     : waitClk  (it);
         CLK_START    : startClk (it);
         CLK_STOP     : stopClk  (it);
-        default      : `uvm_error("CLK_DRV", "No such operation")
+        default      : `uvm_error("CLK_RST_DRV", "No such operation")
       endcase
 
       seq_item_port.item_done();

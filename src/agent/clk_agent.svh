@@ -2,7 +2,7 @@
  * START DATE  : 2017
  * LICENSE     : LGPLv3
  *
- * DESCRIPTION : The Clk agent is used to start/stop user specified clocks.
+ * DESCRIPTION : The agent is used to control user specified clocks and resets.
  */
 
 class ClkAgent extends uvm_agent;
@@ -38,12 +38,12 @@ endclass: ClkAgent
 
     // get the Clk agent configuration
     if (!uvm_config_db #(ClkAgentCfg)::get(this, "", "clk_agent_cfg_db", cfg)) begin
-      `uvm_fatal("CLK_AGT", "Couldn't get the Clk agent configuration")
+      `uvm_fatal("CLK_RST_AGT", "Couldn't get the Clk agent configuration")
     end
 
     // check if the virtual interface reference is populated
     if (cfg.vif == null) begin
-      `uvm_fatal("CLK_AGT", "Virtual interface not found")
+      `uvm_fatal("CLK_RST_AGT", "Virtual interface not found")
     end
 
     // create agent components
