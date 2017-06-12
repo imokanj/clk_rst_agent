@@ -150,8 +150,8 @@ package ClkAgentPkg;
     input  uvm_sequencer_base _sqcr                 ,
     input  clk_list_t         _clk_name    []       ,
     input  logic              _init        [] = {}  ,      
-    input  logic [31:0]       _period      []       ,
-    input  logic [31:0]       _phase_shift [] = {}
+    input  time               _period      []       ,
+    input  time               _phase_shift [] = {}
   );
 
     ClkStartSequence  _seq;
@@ -172,11 +172,11 @@ package ClkAgentPkg;
       return;
     end
     
-    foreach (_period[i]) begin
-      if (_period[i][0]) begin
-        `uvm_warning("CLK_PKG", $sformatf("\nPeriod for %s clock is not an even number\n", _clk_name[i].name()))
-      end
-    end
+    //foreach (_period[i]) begin
+      //if (_period[i][0]) begin
+        //`uvm_warning("CLK_PKG", $sformatf("\nPeriod for %s clock is not an even number\n", _clk_name[i].name()))
+      //end
+    //end
     
     _seq = ClkStartSequence::type_id::create("clk_start_seq");
     
@@ -217,10 +217,10 @@ package ClkAgentPkg;
                                "Pin Name(s)     : %s\n",
                                "Pin Num(s)      : %s\n",
                                "Init. Value(s)  : %s\n",
-                               "Clock Period(s) : %s\n",
-                               "Phase Delay(s)  : %s\n"}
+                               "Clock Period(s) : %p\n",
+                               "Phase Delay(s)  : %p\n"}
                                , printPinEnumO(_clk_name, 0), printPinEnumO(_clk_name, 1)
-                               , printPinVal(_init), printPinVal2(_period), printPinVal2(_phase_shift)
+                               , printPinVal(_init), _period, _phase_shift
       ), UVM_LOW)
     end
 

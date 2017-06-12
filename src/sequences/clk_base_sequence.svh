@@ -10,14 +10,14 @@ class ClkBaseSequence extends uvm_sequence #(ClkItem);
   `uvm_object_utils(ClkBaseSequence)
 
   // Variables
-  ClkItem           it;
-  static int        inst_cnt;
-  rand op_type_t    op_type;
-
-  rand clk_list_t   clk_name    [];
-  rand logic        init        [];
-  rand logic [31:0] period      [];
-  rand logic [31:0] phase_shift [];
+  ClkItem         it;
+  static int      inst_cnt;
+  rand op_type_t  op_type;
+                  
+  rand clk_list_t clk_name    [];
+  rand logic      init        [];
+  rand time       period      [];
+  rand time       phase_shift [];
 
   // Constructor
   function new(string name = "ClkBaseSequence");

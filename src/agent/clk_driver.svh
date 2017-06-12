@@ -70,7 +70,10 @@ endclass: ClkDriver
           half_period  = it.period[i]/2;
           
           // start clock generation
-          #phase_shift;
+          if (phase_shift) begin
+            #phase_shift;
+          end
+          
           vif.clk[clk_name]        = init_clk_val;
           proc_start_clk[clk_name] = process::self();
           forever begin
