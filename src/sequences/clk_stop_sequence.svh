@@ -37,6 +37,6 @@ endclass: ClkStopSequence
       clk_name.size()    == local::clk_name.size();
       foreach(local::clk_name[i])
         clk_name[i]      == local::clk_name[i];
-    }) `uvm_error("CLK_STOP_SQNC", "\nRandomization failed\n");
+    }) `uvm_error("CLK_STOP_SQNC", "\nRandomization failed\n")
     finish_item(it);
   endtask: body

@@ -46,6 +46,6 @@ endclass: ClkStartSequence
       phase_shift.size() == local::phase_shift.size();
       foreach(local::phase_shift[i])
         phase_shift[i]   == local::phase_shift[i];
-    }) `uvm_error("CLK_START_SQNC", "\nRandomization failed\n");
+    }) `uvm_error("CLK_START_SQNC", "\nRandomization failed\n")
     finish_item(it);
   endtask: body
