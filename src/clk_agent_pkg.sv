@@ -191,11 +191,11 @@ package ClkAgentPkg;
       return;
     end
     
-    //foreach (_period[i]) begin
-      //if (_period[i][0]) begin
-        //`uvm_warning("CLK_RST_PKG", $sformatf("\nPeriod for %s clock is not an even number\n", _clk_name[i].name()))
-      //end
-    //end
+    foreach (_period[i]) begin
+      if (_period[i][0]) begin
+        `uvm_warning("CLK_RST_PKG", $sformatf("\nPeriod for %s clock is not an even number\n", _clk_name[i].name()))
+      end
+    end
     
     _seq = ClkStartSequence::type_id::create("clk_start_seq");
     

@@ -47,6 +47,6 @@ endclass: RstSetPolaritySequence
       foreach(local::init[i])
         init[i]          == local::init[i];
       is_blocking        == local::is_blocking;
-    }) `uvm_error("RST_SET_SQNC", "\nRandomization failed\n");
+    }) `uvm_error("RST_SET_SQNC", "\nRandomization failed\n")
     finish_item(it);
   endtask: body
