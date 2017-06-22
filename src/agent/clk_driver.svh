@@ -87,8 +87,13 @@ endclass: ClkDriver
   //----------------------------------------------------------------------------
 
   task ClkDriver::waitClk(input ClkItem it);
-    repeat(it.init[0]) begin
-      @(posedge vif.clk[it.clk_name[0]]);
+    if (proc_start_clk[it.clk_name[0]] != null) begin
+      repeat(it.num) begin
+        @(posedge vif.clk[it.clk_name[0]]);
+      end
+      $display("Hello!!!");
+    end else begin
+      `uvm_warning("CLK_RST_DRV", $sformatf("\nWaiting cycles on %s clock ignored. Clock is not running.", it.clk_name[0].name()))
     end
   endtask: waitClk
 
@@ -98,7 +103,7 @@ endclass: ClkDriver
     foreach (it.clk_name[i]) begin
       // check if an affected process is already running
       if (proc_start_clk[it.clk_name[i]] != null) begin
-        `uvm_warning("CLK_RST_DRV", $sformatf("\nChanging %s clock polarity ignored. Clock is running.", it.clk_name[i].name()))        
+        `uvm_warning("CLK_RST_DRV", $sformatf("\nChanging %s clock polarity ignored. Clock is running.", it.clk_name[i].name()))
       end else begin
         vif.clk[it.clk_name[i]] = it.init[i];
       end
