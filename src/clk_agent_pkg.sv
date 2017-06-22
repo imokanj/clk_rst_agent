@@ -322,7 +322,7 @@ package ClkAgentPkg;
     input  uvm_sequencer_base _sqcr                ,
     input  rst_list_t         _rst_name   []       ,
     input  clk_list_t         _clk_name   []       ,
-    input  logic              _pol        [] = {}
+    input  logic              _pol        [] = {}  ,
     input  logic              _is_blocking   = 1'b1
   );
 
@@ -410,7 +410,7 @@ package ClkAgentPkg;
     input  bit                _print_info = 1'b1,
     input  uvm_sequencer_base _sqcr             ,
     input  clk_list_t         _clk_name         ,
-    input  logic [31:0]       _num        = 1
+    input  bit [31:0]         _num        = 1
   );
 
     ClkWaitCyclesSequence  _seq;
@@ -430,8 +430,7 @@ package ClkAgentPkg;
     if (!(_seq.randomize() with {
       clk_name.size() == 1;
       clk_name[0]     == _clk_name;
-      init.size()     == 1;
-      init[0]         == _num;
+      num             == _num;
     })) `uvm_error("CLK_RST_PKG", "\nRandomization failed\n")
 
     if (_print_info) begin

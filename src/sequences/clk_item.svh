@@ -16,6 +16,7 @@ class ClkItem extends uvm_sequence_item;
   rand logic      init        [];
   rand time       period      [];
   rand time       phase_shift [];
+  rand bit [31:0] num;
 
   // Constructor
   function new(string name = "ClkItem");
@@ -30,6 +31,7 @@ class ClkItem extends uvm_sequence_item;
     `uvm_field_array_int (                init, UVM_DEFAULT | UVM_NOPACK)
     `uvm_field_array_int (              period, UVM_DEFAULT | UVM_NOPACK | UVM_TIME)
     `uvm_field_array_int (         phase_shift, UVM_DEFAULT | UVM_NOPACK | UVM_TIME)
+    `uvm_field_int       (                 num, UVM_DEFAULT | UVM_NOPACK)
   `uvm_object_utils_end
 
 endclass: ClkItem
