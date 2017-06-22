@@ -91,7 +91,6 @@ endclass: ClkDriver
       repeat(it.num) begin
         @(posedge vif.clk[it.clk_name[0]]);
       end
-      $display("Hello!!!");
     end else begin
       `uvm_warning("CLK_RST_DRV", $sformatf("\nWaiting cycles on %s clock ignored. Clock is not running.", it.clk_name[0].name()))
     end
