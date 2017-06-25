@@ -63,7 +63,7 @@ package ClkAgentPkg;
 //******************************************************************************
 // Functions/Tasks
 //******************************************************************************
-  
+
   function automatic string printPinEnumO(clk_list_t a [], bit is_val);
     parameter DIGITS = "9876543210";
     string    str    = "";
@@ -87,9 +87,9 @@ package ClkAgentPkg;
     end
     return str;
   endfunction : printPinEnumO
-  
+
   //----------------------------------------------------------------------------
-  
+
   function automatic string printPinVal(logic v []);
     string    str = "";
     string    val;
@@ -108,9 +108,9 @@ package ClkAgentPkg;
     end
     return str;
   endfunction : printPinVal
-  
+
   //----------------------------------------------------------------------------
-  
+
     function automatic string printPinVal2(logic [31:0] v []);
     string    str = "";
     string    val;
@@ -129,20 +129,20 @@ package ClkAgentPkg;
     end
     return str;
   endfunction : printPinVal2
-  
+
   //----------------------------------------------------------------------------
 
   task automatic startClk(
     input  bit                _print_info     = 1'b1,
     input  uvm_sequencer_base _sqcr                 ,
     input  clk_list_t         _clk_name    []       ,
-    input  logic              _init        [] = {}  ,      
+    input  logic              _init        [] = {}  ,
     input  time               _period      []       ,
     input  time               _phase_shift [] = {}
   );
 
     ClkStartSequence  _seq;
-    
+
     if (_sqcr == null) begin
       `uvm_error("CLK_RST_PKG", "\nClk agent sequencer handle is NULL\n")
       return;
@@ -153,20 +153,20 @@ package ClkAgentPkg;
                              "is greater than number of actual clocks, or is less than one\n"})
       return;
     end
-    
+
     if (_period.size() != _clk_name.size()) begin
       `uvm_error("CLK_RST_PKG", "\nNumber of specified clock periods differs from the number of clock sources.\n")
       return;
     end
-    
+
     foreach (_period[i]) begin
       if (_period[i][0]) begin
         `uvm_warning("CLK_RST_PKG", $sformatf("\nPeriod for %s clock is not an even number\n", _clk_name[i].name()))
       end
     end
-    
+
     _seq = ClkStartSequence::type_id::create("clk_start_seq");
-    
+
     // set default values for initial and phase delay parameters
     if (!_init.size()) begin
       _init = new [_clk_name.size()];
@@ -174,7 +174,7 @@ package ClkAgentPkg;
         _init[i] = 1'b0;
       end
     end
-    
+
     if (!_phase_shift.size()) begin
       _phase_shift = new [_clk_name.size()];
       foreach (_phase_shift[i]) begin
@@ -224,7 +224,7 @@ package ClkAgentPkg;
   );
 
     ClkStopSequence  _seq;
-    
+
     if (_sqcr == null) begin
       `uvm_error("CLK_RST_PKG", "\nClk agent sequencer handle is NULL\n")
       return;
@@ -235,7 +235,7 @@ package ClkAgentPkg;
                              "is greater than number of actual clocks, or is less than one\n"})
       return;
     end
-    
+
     _seq = ClkStopSequence::type_id::create("clk_stop_seq");
 
     if (!(_seq.randomize() with {
@@ -268,7 +268,7 @@ package ClkAgentPkg;
   );
 
     ClkSetPolaritySequence  _seq;
-    
+
     if (_sqcr == null) begin
       `uvm_error("CLK_RST_PKG", "\nClk agent sequencer handle is NULL\n")
       return;
@@ -279,9 +279,9 @@ package ClkAgentPkg;
                                  "is greater than number of actual clocks, or is less than one\n"})
       return;
     end
-        
+
     _seq = ClkSetPolaritySequence::type_id::create("clk_set_pol_seq");
-    
+
     // set default values for initial and phase delay parameters
     if (!_pol.size()) begin
       `uvm_warning("CLK_RST_PKG", "\nPolarity not specified. Default value of all zeros used.\n")
@@ -314,21 +314,21 @@ package ClkAgentPkg;
     _seq.start(_sqcr);
 
   endtask : setClkPol
-  
+
   //----------------------------------------------------------------------------
 
   task automatic setRstPol(
-    input  bit                _print_info    = 1'b1,
-    input  uvm_sequencer_base _sqcr                ,
-    input  rst_list_t         _rst_name   []       ,
-    input  clk_list_t         _clk_name   []       ,
-    input  logic              _pol        [] = {}  ,
-    input  logic              _is_blocking   = 1'b1
+    input  bit                _print_info     = 1'b1,
+    input  uvm_sequencer_base _sqcr                 ,
+    input  rst_list_t         _rst_name    []       ,
+    input  clk_list_t         _clk_name    []       ,
+    input  logic              _pol         [] = {}  ,
+    input  logic              _is_blocking    = 1'b1
   );
 
     string                  _is_blocking_str;
     RstSetPolaritySequence  _seq;
-    
+
     if (_sqcr == null) begin
       `uvm_error("CLK_RST_PKG", "\nClk agent sequencer handle is NULL\n")
       return;
@@ -339,27 +339,27 @@ package ClkAgentPkg;
                                  "is greater than number of actual resets, or is less than one\n"})
       return;
     end
-        
+
     if (_clk_name.size() > C_WIDTH || _rst_name.size() < 1 || (_clk_name.size() < C_WIDTH && _clk_name.size() != 1)) begin
       `uvm_error("CLK_RST_PKG", {"\nOperation ignored.\nValid number of specified clocks ",
                                  "is either one or an individual clock for all reset signals.\n",
                                  "When one clock is specified it will be used for all specified reset signals.\n"})
       return;
     end
-        
+
     _seq = RstSetPolaritySequence::type_id::create("rst_set_pol_seq");
-    
+
     // regulate clk array
     if (_clk_name.size() == 1) begin
       clk_list_t tmp;
       tmp = _clk_name[0];
-      
+
       _clk_name = new [_rst_name.size()];
       foreach (_clk_name[i]) begin
         _clk_name[i] = tmp;
       end
     end
-    
+
     // set default values for initial and phase delay parameters
     if (!_pol.size()) begin
       `uvm_warning("CLK_RST_PKG", "\nPolarity not specified. Default value of all zeros used.\n")
@@ -384,7 +384,7 @@ package ClkAgentPkg;
 
     if (_print_info) begin
       _is_blocking_str = (_is_blocking != 1'b0) ? "TRUE" : "FALSE";
-      
+
       `uvm_info("CLK_RST_PKG", $sformatf({"\nSet Reset Polatiy OP:\n",
                                "-------------------------------------------------\n",
                                "OP Type           : RST_SET\n",
@@ -403,7 +403,7 @@ package ClkAgentPkg;
     _seq.start(_sqcr);
 
   endtask : setRstPol
-  
+
   //----------------------------------------------------------------------------
 
   task automatic waitClkCycles(
@@ -414,14 +414,14 @@ package ClkAgentPkg;
   );
 
     ClkWaitCyclesSequence  _seq;
-    
+
     if (_sqcr == null) begin
       `uvm_error("CLK_RST_PKG", "\nClk agent sequencer handle is NULL\n")
       return;
     end
-        
+
     _seq = ClkWaitCyclesSequence::type_id::create("clk_wait_cycles_seq");
-    
+
     if (_num < 1) begin
       `uvm_warning("CLK_RST_PKG", "\nIncorrect number of cycles value specified. Value of 1 used.\n")
       _num = 1;
