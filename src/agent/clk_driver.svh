@@ -10,7 +10,7 @@ class ClkDriver extends uvm_driver #(ClkItem);
 
   // Components
   virtual ClkIf vif;
-  
+
   // Variables
   protected process proc_start_clk []; // each process corresponds to one clock
 
@@ -21,7 +21,7 @@ class ClkDriver extends uvm_driver #(ClkItem);
 
   extern virtual function void setClkPol(input ClkItem it);
   extern virtual function void stopClk  (input ClkItem it);
-  
+
   extern virtual task          driveInit();
   extern virtual task          setRstPol(input ClkItem it);
   extern virtual task          waitClk  (input ClkItem it);
@@ -43,24 +43,24 @@ endclass: ClkDriver
 
   task ClkDriver::setRstPol(input ClkItem it);
     logic [31:0] clk_name;
-    
+
     foreach (it.rst_name[i]) begin
       fork
         begin
           // check if the specified clock process is running
           if (proc_start_clk[it.clk_name[i]] == null) begin
             `uvm_warning("CLK_RST_DRV", $sformatf({"\nChanging %s reset polarity ignored. ",
-                         "Clock %s is not running."}, it.rst_name[i].name(), it.clk_name[i].name()))        
+                         "Clock %s is not running."}, it.rst_name[i].name(), it.clk_name[i].name()))
           end else begin
             logic        rst_val;
             logic [31:0] rst_name;
-            
+
             rst_val  = it.init[i];
             rst_name = it.rst_name[i];
             clk_name = it.clk_name[i];
-          
+
             @(posedge vif.clk[clk_name]);
-            #0;
+            #1step;
             vif.rst[rst_name] = rst_val;
           end
         end
@@ -69,7 +69,7 @@ endclass: ClkDriver
       // must use context switch because of fork-join_none
       #0;
     end
-    
+
     // block
     if (it.is_blocking) begin
       foreach (it.clk_name[i]) begin
@@ -78,12 +78,12 @@ endclass: ClkDriver
             if (proc_start_clk[it.clk_name[i]] != null) begin
               @(posedge vif.clk[it.clk_name[i]]);
             end
-          end        
+          end
         join
       end
     end
   endtask: setRstPol
-  
+
   //----------------------------------------------------------------------------
 
   task ClkDriver::waitClk(input ClkItem it);
@@ -117,24 +117,24 @@ endclass: ClkDriver
       if (proc_start_clk[i] != null) begin
         proc_start_clk[i].kill();
       end
-      
+
       fork
         begin
           logic        init_clk_val;
           logic [31:0] clk_name;
           logic [31:0] phase_shift;
           logic [31:0] half_period;
-          
+
           init_clk_val = it.init[i];
           clk_name     = it.clk_name[i];
           phase_shift  = it.phase_shift[i];
           half_period  = it.period[i]/2;
-          
+
           // start clock generation
           if (phase_shift) begin
             #phase_shift;
           end
-          
+
           vif.clk[clk_name]        = init_clk_val;
           proc_start_clk[clk_name] = process::self();
           forever begin
@@ -142,12 +142,12 @@ endclass: ClkDriver
           end
         end
       join_none
-      
+
       // must use context switch because of fork-join_none
       #0;
     end
   endtask: startClk
-  
+
   //----------------------------------------------------------------------------
 
   function void ClkDriver::stopClk(input ClkItem it);

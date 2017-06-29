@@ -64,29 +64,31 @@ package ClkAgentPkg;
 // Functions/Tasks
 //******************************************************************************
 
-  function automatic string printPinEnumO(clk_list_t a [], bit is_val);
-    parameter DIGITS = "9876543210";
-    string    str    = "";
-    int       tmp;
+  class PrintEnum #(type T = clk_list_t);
+    static function automatic string printPinEnum(T a [], bit is_val);
+      parameter DIGITS = "9876543210";
+      string    str    = "";
+      int       tmp;
 
-    tmp = a.size();
-    foreach(a[i]) begin
-      if (!is_val) begin
-        if (i != tmp-1) begin
-          str = {str, a[i].name(), ", "};
+      tmp = a.size();
+      foreach(a[i]) begin
+        if (!is_val) begin
+          if (i != tmp-1) begin
+            str = {str, a[i].name(), ", "};
+          end else begin
+            str = {str, a[i].name()};
+          end
         end else begin
-          str = {str, a[i].name()};
-        end
-      end else begin
-        if (i != tmp-1) begin
-          str = {str, DIGITS[a[i]*8+:8], ", "};
-        end else begin
-          str = {str, DIGITS[a[i]*8+:8]};
+          if (i != tmp-1) begin
+            str = {str, DIGITS[a[i]*8+:8], ", "};
+          end else begin
+            str = {str, DIGITS[a[i]*8+:8]};
+          end
         end
       end
-    end
-    return str;
-  endfunction : printPinEnumO
+      return str;
+    endfunction : printPinEnum
+  endclass : PrintEnum
 
   //----------------------------------------------------------------------------
 
@@ -108,27 +110,6 @@ package ClkAgentPkg;
     end
     return str;
   endfunction : printPinVal
-
-  //----------------------------------------------------------------------------
-
-    function automatic string printPinVal2(logic [31:0] v []);
-    string    str = "";
-    string    val;
-    int       tmp;
-
-    tmp = v.size();
-    foreach(v[i]) begin
-      val = (&v[i] === 1'bX) ? "X" :
-            (&v[i] === 1'bZ) ? "Z" :
-            (&v[i] === 1'b1) ? "1" : "0";
-      if (i != tmp-1) begin
-        str = {str, "1'b", val, ", "};
-      end else begin
-        str = {str, "1'b", val};
-      end
-    end
-    return str;
-  endfunction : printPinVal2
 
   //----------------------------------------------------------------------------
 
@@ -204,9 +185,10 @@ package ClkAgentPkg;
                                "Clock Name(s)   : %s\n",
                                "Clock Num(s)    : %s\n",
                                "Init. Value(s)  : %s\n",
-                               "Clock Period(s) : %p\n",
-                               "Phase Delay(s)  : %p\n"}
-                               , printPinEnumO(_clk_name, 0), printPinEnumO(_clk_name, 1)
+                               "Clock Period(s) : %0t\n",
+                               "Phase Delay(s)  : %0t\n"}
+                               , PrintEnum #(clk_list_t)::printPinEnum(_clk_name, 0)
+                               , PrintEnum #(clk_list_t)::printPinEnum(_clk_name, 1)
                                , printPinVal(_init), _period, _phase_shift
       ), UVM_LOW)
     end
@@ -250,7 +232,8 @@ package ClkAgentPkg;
                                "OP Type         : CLK_STOP\n",
                                "Clock Name(s)   : %s\n",
                                "Clock Num(s)    : %s\n"}
-                               , printPinEnumO(_clk_name, 0), printPinEnumO(_clk_name, 1)
+                               , PrintEnum #(clk_list_t)::printPinEnum(_clk_name, 0)
+                               , PrintEnum #(clk_list_t)::printPinEnum(_clk_name, 1)
       ), UVM_LOW);
     end
 
@@ -307,7 +290,9 @@ package ClkAgentPkg;
                                "Clock Name(s)     : %s\n",
                                "Clock Num(s)      : %s\n",
                                "Polarity value(s) : %s\n"}
-                               , printPinEnumO(_clk_name, 0), printPinEnumO(_clk_name, 1), printPinVal(_pol)
+                               , PrintEnum #(clk_list_t)::printPinEnum(_clk_name, 0)
+                               , PrintEnum #(clk_list_t)::printPinEnum(_clk_name, 1)
+                               , printPinVal(_pol)
       ), UVM_LOW)
     end
 
@@ -388,14 +373,17 @@ package ClkAgentPkg;
       `uvm_info("CLK_RST_PKG", $sformatf({"\nSet Reset Polatiy OP:\n",
                                "-------------------------------------------------\n",
                                "OP Type           : RST_SET\n",
-                               "Reset Name(s)     : %p\n",
-                               "Reset Num(s)      : %p\n",
+                               "Reset Name(s)     : %s\n",
+                               "Reset Num(s)      : %s\n",
                                "Polarity value(s) : %s\n",
                                "Clock Name(s)     : %s\n",
                                "Clock Num(s)      : %s\n",
                                "Blocking          : %s\n"}
-                               , _rst_name, _rst_name, printPinVal(_pol)
-                               , printPinEnumO(_clk_name, 0), printPinEnumO(_clk_name, 1)
+                               , PrintEnum #(rst_list_t)::printPinEnum(_rst_name, 0)
+                               , PrintEnum #(rst_list_t)::printPinEnum(_rst_name, 1)
+                               , printPinVal(_pol)
+                               , PrintEnum #(clk_list_t)::printPinEnum(_clk_name, 0)
+                               , PrintEnum #(clk_list_t)::printPinEnum(_clk_name, 1)
                                , _is_blocking_str
       ), UVM_LOW)
     end
